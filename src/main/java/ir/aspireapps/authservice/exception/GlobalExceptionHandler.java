@@ -1,5 +1,9 @@
 package ir.aspireapps.authservice.exception;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import ir.aspireapps.authservice.dto.error.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -13,6 +17,23 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+@ApiResponses({
+        @ApiResponse(
+                responseCode = "400",
+                description = "Validation error",
+                content = @Content(schema = @Schema(implementation = ApiError.class))
+        ),
+        @ApiResponse(
+                responseCode = "401",
+                description = "Unauthorized",
+                content = @Content(schema = @Schema(implementation = ApiError.class))
+        ),
+        @ApiResponse(
+                responseCode = "403",
+                description = "Forbidden",
+                content = @Content(schema = @Schema(implementation = ApiError.class))
+        )
+})
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(AuthServiceBaseException.class)
