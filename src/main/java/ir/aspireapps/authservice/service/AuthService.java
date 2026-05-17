@@ -49,7 +49,7 @@ public class AuthService {
     public AuthResponse login(@Valid LoginRequest request,
                               String device,
                               String ip) {
-        System.out.println(request);
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.email(),
@@ -58,7 +58,6 @@ public class AuthService {
         );
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
-        if(user == null) throw new ResourceNotFoundException("User not found");
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = refreshTokenService.createRefreshToken(user, device, ip);
@@ -89,8 +88,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void logoutAll(String refreshTokenValue, String email){
-        refreshTokenService.verifyRefreshToken(refreshTokenValue);
+    public void logoutAll(String email){
         refreshTokenService.revokeAllUserTokens(email);
     }
 }

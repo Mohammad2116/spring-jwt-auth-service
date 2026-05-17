@@ -6,6 +6,7 @@ import ir.aspireapps.authservice.dto.auth.RefreshTokenRequest;
 import ir.aspireapps.authservice.dto.user.UserRegisterRequest;
 import ir.aspireapps.authservice.model.RefreshToken;
 import ir.aspireapps.authservice.model.User;
+import ir.aspireapps.authservice.security.CustomUserDetails;
 import ir.aspireapps.authservice.service.AuthService;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -49,10 +51,9 @@ public class AuthController {
     }
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @PostMapping("/logout-all")
-    public ResponseEntity<Void> logoutAll(@Valid @RequestBody RefreshTokenRequest request,
-                                          @AuthenticationPrincipal User user){
-        authService.logoutAll(request.refreshToken(), user.getEmail());
+    @PostMapping("/logout/all")
+    public ResponseEntity<Void> logoutAll(@AuthenticationPrincipal CustomUserDetails userDetails){
+        authService.logoutAll(userDetails.getUser().getEmail());
         return ResponseEntity.noContent().build();
     }
 }

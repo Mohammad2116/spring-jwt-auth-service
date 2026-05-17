@@ -1,9 +1,11 @@
 package ir.aspireapps.authservice.control;
 
+import ir.aspireapps.authservice.dto.auth.RefreshTokenRequest;
 import ir.aspireapps.authservice.dto.user.UserDetailsResponse;
 import ir.aspireapps.authservice.dto.user.UserUpdateDetailsRequest;
 import ir.aspireapps.authservice.model.User;
 import ir.aspireapps.authservice.security.CustomUserDetails;
+import ir.aspireapps.authservice.service.AuthService;
 import ir.aspireapps.authservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final AuthService authService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
@@ -34,10 +37,11 @@ public class UserController {
         return ResponseEntity.ok(userService.updateDetails(request));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/me")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Void> delete(@AuthenticationPrincipal CustomUserDetails userDetails){
-        userService.delete(userDetails.getUser().getEmail());
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal CustomUserDetails userDetail){
+        authService.logoutAll(userDetail.getUser().getEmail());
+        userService.delete(userDetail.getUser().getEmail());
         return ResponseEntity.noContent().build();
     }
 }

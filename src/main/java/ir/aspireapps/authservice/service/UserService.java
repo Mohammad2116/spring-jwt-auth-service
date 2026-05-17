@@ -1,15 +1,21 @@
 package ir.aspireapps.authservice.service;
 
+import ir.aspireapps.authservice.dto.page.PageResponse;
 import ir.aspireapps.authservice.dto.user.UserDetailsResponse;
 import ir.aspireapps.authservice.dto.user.UserRegisterRequest;
 import ir.aspireapps.authservice.dto.user.UserUpdateDetailsRequest;
 import ir.aspireapps.authservice.dto.user.UserUpdatePasswordRequest;
 import ir.aspireapps.authservice.exception.ResourceNotFoundException;
+import ir.aspireapps.authservice.mapper.PageResponseMapper;
 import ir.aspireapps.authservice.mapper.UserMapper;
 import ir.aspireapps.authservice.model.Role;
 import ir.aspireapps.authservice.model.User;
 import ir.aspireapps.authservice.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,11 +57,11 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User with email [" + email + "] not found")));
     }
 
-    public List<UserDetailsResponse> findAll(){
-        return userRepository.findAll()
-                .stream()
-                .map(userMapper::toResponse)
-                .toList();
+    public PageResponse<UserDetailsResponse> findAll(Pageable pageable) {
+        pageable = PageRequest.of(pageable.getPageNumber(),
+                pageable.getPageSize(), Sort.by(Sort.Direction.ASC, "email"));
+        Page<UserDetailsResponse> page = userRepository.findAll(pageable).map(userMapper::toResponse);
+        return PageResponseMapper.from(page);
     }
 
     public UserDetailsResponse getDetails(String email){
