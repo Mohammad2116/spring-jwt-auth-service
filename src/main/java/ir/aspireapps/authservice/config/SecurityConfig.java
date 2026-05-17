@@ -1,53 +1,76 @@
 package ir.aspireapps.authservice.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import ir.aspireapps.authservice.exception.CustomAccessDeniedHandler;
+import ir.aspireapps.authservice.exception.CustomAuthenticationEntryPoint;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 
-import ir.aspireapps.authservice.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-	public final CustomUserDetailsService customUserDetailsService;
+	private final UserDetailsService userDetailsService;
 	private final PasswordEncoder passwordEncoder;
-	
-	@Value("${security.rememeberme.key}")
-	private String rememberMeKey;
-	
+	private final JwtFilter jwtFilter;
+	private final CustomAccessDeniedHandler customAccessDeniedHandler;
+	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+
 	@Bean
-	AuthenticationManager authenticationManager(HttpSecurity http) {
-		AuthenticationManagerBuilder builder = 
-				http.getSharedObject(AuthenticationManagerBuilder.class);
-		
-		builder
-			.userDetailsService(customUserDetailsService)
-			.passwordEncoder(passwordEncoder);
-		
-		return builder.build();
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration config){
+		return config.getAuthenticationManager();
 	}
-	
+
+	@Bean
+	public DaoAuthenticationProvider daoAuthenticationProvider(){
+		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+		provider.setPasswordEncoder(passwordEncoder);
+		return provider;
+	}
+
+
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) {
 		http
-			.authorizeHttpRequests(auth -> auth
-					.requestMatchers("/api/auth/register",
-									 "/api/auth/login").permitAll()
-					.anyRequest().authenticated()
-					)
-			.rememberMe(r -> r
-					.key(rememberMeKey)
-					.tokenValiditySeconds(60 * 60 * 24 *7)
-					.userDetailsService(customUserDetailsService));
-		
+				.csrf(AbstractHttpConfigurer::disable)
+
+				.sessionManagement(session ->
+						session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+				.authorizeHttpRequests(request ->
+						request.requestMatchers("/api/auth/register",
+												"/api/auth/login",
+												"/api/auth/refresh",
+												"/api/actuator/health",
+												"/v3/api-docs/**",
+												"/swagger-ui/**")
+								.permitAll()
+								.anyRequest().authenticated())
+
+				.exceptionHandling(ex -> ex
+						.authenticationEntryPoint(customAuthenticationEntryPoint)
+						.accessDeniedHandler(customAccessDeniedHandler))
+
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
 		return http.build();
 	}
 }

@@ -3,6 +3,7 @@ package ir.aspireapps.authservice.model;
 import java.time.Instant;
 import java.util.UUID;
 
+import ir.aspireapps.authservice.dto.user.UserUpdateDetailsRequest;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -36,8 +37,8 @@ import lombok.ToString;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@SQLDelete(sql = "UPDATE users SET deletedAt = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deletedAt IS NULL")
+@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -73,4 +74,9 @@ public class User {
 	
 	@Column(name = "deleted_at", nullable = true)
 	private Instant deleted_at;
+
+	public void updateDetails(UserUpdateDetailsRequest request){
+		this.firstName = request.firstName();
+		this.lastName = request.lastName();
+	}
 }

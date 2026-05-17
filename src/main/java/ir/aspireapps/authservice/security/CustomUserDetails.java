@@ -17,9 +17,8 @@ import lombok.Setter;
 @Setter
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails{
-	private static final long serialVersionUID = 1L;
 	private final User user;
-	
+
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
@@ -28,7 +27,7 @@ public class CustomUserDetails implements UserDetails{
 	public UUID getId() {
 		return user.getId();
 	}
-	
+
 	@Override
 	public String getPassword() {
 		return user.getPassword();
@@ -57,6 +56,6 @@ public class CustomUserDetails implements UserDetails{
 	@Override
 	public boolean isEnabled() {
 		return UserDetails.super.isEnabled();
-	}	
-	
+	}
+
 }
