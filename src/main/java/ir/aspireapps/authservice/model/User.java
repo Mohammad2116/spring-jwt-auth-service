@@ -71,12 +71,16 @@ public class User {
 	@Column(name = "updated_at", nullable = false)
 	@UpdateTimestamp
 	private Instant updatedAt;
-	
+
+	@Column(name = "password_updated_at", nullable = true)
+	public Instant passwordUpdatedAt;
+
 	@Column(name = "deleted_at", nullable = true)
-	private Instant deleted_at;
+	private Instant deletedAt;
 
 	public void updateDetails(UserUpdateDetailsRequest request){
 		this.firstName = request.firstName();
 		this.lastName = request.lastName();
 	}
+
 }

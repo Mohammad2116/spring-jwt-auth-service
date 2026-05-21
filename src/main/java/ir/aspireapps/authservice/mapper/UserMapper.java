@@ -14,8 +14,9 @@ public interface UserMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "role", ignore = true)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "deleted_at", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "passwordUpdatedAt", ignore = true)
     User toEntity(UserRegisterRequest request);
 
     UserDetailsResponse toResponse(User user);

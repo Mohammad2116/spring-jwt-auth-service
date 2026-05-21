@@ -6,16 +6,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import ir.aspireapps.authservice.dto.auth.AuthResponse;
 import ir.aspireapps.authservice.dto.auth.RefreshTokenRequest;
 import ir.aspireapps.authservice.dto.user.UserDetailsResponse;
 import ir.aspireapps.authservice.dto.user.UserUpdateDetailsRequest;
+import ir.aspireapps.authservice.dto.user.UserUpdatePasswordRequest;
 import ir.aspireapps.authservice.model.User;
 import ir.aspireapps.authservice.security.CustomUserDetails;
 import ir.aspireapps.authservice.service.AuthService;
 import ir.aspireapps.authservice.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/user")
 @CrossOrigin
+@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 @RequiredArgsConstructor
 @Tag(
         name = "Users",
@@ -45,7 +50,6 @@ public class UserController {
     })
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<UserDetailsResponse> getMe(@AuthenticationPrincipal CustomUserDetails user){
         return ResponseEntity.ok(userService.getDetails(user.getUser().getEmail()));
     }
@@ -61,9 +65,31 @@ public class UserController {
     })
     @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/me")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<UserDetailsResponse> updateMe(@Valid @RequestBody UserUpdateDetailsRequest request){
-        return ResponseEntity.ok(userService.updateDetails(request));
+    public ResponseEntity<UserDetailsResponse> updateMe(
+            @Valid @RequestBody UserUpdateDetailsRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        return ResponseEntity.ok(userService.updateDetails(userDetails.getUser().getEmail(), request));
+    }
+
+    @Operation(
+            summary = "Update current user password",
+            description = "Update the authenticated user's password, all refresh tokens will be revoked"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @PutMapping("/me/password")
+    public ResponseEntity<AuthResponse> updateMyPassword(
+            @Valid @RequestBody UserUpdatePasswordRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpServletRequest httpServletRequest) {
+        return  ResponseEntity.ok(
+                userService.updatePassword(userDetails.getUser().getEmail(), request,
+                        httpServletRequest.getHeader("User-Agent"),
+                        httpServletRequest.getRemoteAddr()));
     }
 
     @Operation(
@@ -76,7 +102,6 @@ public class UserController {
     })
     @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/me")
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal CustomUserDetails userDetail){
         authService.logoutAll(userDetail.getUser().getEmail());
         userService.delete(userDetail.getUser().getEmail());
