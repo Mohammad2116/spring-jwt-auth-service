@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Service
 @Transactional(readOnly = true)
-@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthService {
     private final AuthenticationManager authenticationManager;
